@@ -1,0 +1,348 @@
+
+# 1.数据的导入与预处理
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import random
+plt.rcParams['font.family'] = 'SimHei'      # 正常显示中文
+plt.rcParams['axes.unicode_minus'] = False
+#学生表
+data1 = pd.read_csv(r'E:\数据挖掘\data1.csv',sep=',',encoding='gbk')
+data1.columns =['序号','校园卡号','性别','专业名称','门禁卡号']
+#消费表
+data2 = pd.read_csv(r'E:\数据挖掘\data2.csv',sep=',',encoding='gbk')
+data2.columns=['流水号','校园卡号','学号','消费时间','消费金额','充值金额','余额',
+               '消费次数','消费类型','消费项目编码','消费项目序号','消费操作编码','操作编码','消费地点']
+#学生出入表
+data3 = pd.read_csv(r'E:\数据挖掘\data3.csv',sep=',',encoding='gbk')
+data3.columns =['序号','门禁卡号','出入日期','出入地点','进出成功编号','通过权限']
+#查看缺失值
+data1.isnull().sum()
+data2.isnull().sum()
+data3.isnull().sum()
+# 删除缺失值过多的列
+data2 = data2.drop(['消费项目序号','消费操作编码'],axis = 1) #axis = 1表示删除这两列
+def get_colors(color_style):
+    cnames = sns.xkcd_rgb
+    if color_style =='light':
+        colors = list(filter(lambda x:x[:5]=='light',cnames.keys()))
+    elif color_style =='dark':
+        colors = list(filter(lambda x:x[:4]=='dark',cnames.keys()))
+    elif color_style =='all':
+        colors = cnames.keys()
+    colors = list(map(lambda x:cnames[x], colors))
+    return colors
+# 封装箱线图
+def boxplot(data, rows = 3, cols = 4, figsize = (20, 15), vars  =None, hue = None, width = 0.25,
+            color_style ='light',subplots_adjust = (0.2, 0.2)):
+
+    fig = plt.figure(figsize = figsize)
+    hue = data[hue] if isinstance(hue,str) and hue in data.columns else hue
+    data = data if not vars else data[vars]
+
+    colors = get_colors(color_style)
+    ax_num = 1
+    for col in data.columns:
+        if isinstance(data[col].values[0],(np.int64,np.int32,np.int16,np.int8,np.float16,np.float32,np.float64)):
+            plt.subplot(rows, cols, ax_num)
+            sns.boxplot(x = hue,y = data[col].values,color=random.sample(colors,1)[0],width= width)
+            plt.xlabel(col)
+#             data[col].plot(kind = 'box',color=random.sample(colors,1)[0])
+            ax_num+=1
+
+    plt.subplots_adjust(hspace = subplots_adjust[0],wspace=subplots_adjust[1])
+    plt.show()
+# 对data1异常值分析
+boxplot(data1[['校园卡号','门禁卡号']])
+# 探索校园卡号异常数据：
+data1[data1['校园卡号']<177500]
+# 修改数据
+data1['校园卡号'].replace({164340:184340,164341:184341},inplace=True)
+#查询门禁卡号的异常值
+data3[data3['门禁卡号']<100000]
+#对data2进行异常值分析
+boxplot(data2)
+# 表连接
+data_2_1 = pd.merge(data1, data2, on='校园卡号')
+data_2_1 = data_2_1[data_2_1['消费类型'] == '消费']  #取出为消费记录的数据。
+
+data_2_2 = pd.merge(data1, data3, on='门禁卡号')
+
+# 2.食堂就餐行为分析
+# 定义早中晚餐：
+import datetime
+from datetime import time
+
+# 取出食堂的消费记录数据
+data_shitang = data2[(data2['消费地点'].map(lambda x:'食堂' in x)) & (data2['消费类型'] =='消费')]
+data_shitang['消费时间'] = pd.to_datetime(data_shitang.消费时间)
+
+def eating_time(x):
+    y = []
+    for i in x:
+        if time(5,0)<=i.time()<time(10,30):
+            y.append('早餐')
+        elif time(10,35)<=i.time()<time(16,30):
+            y.append('午餐')
+        elif time(16,30)<=i.time()<time(23,30):
+            y.append('晚餐')
+        else :
+            y.append('不明确')
+    return y
+
+data_shitang['就餐类型'] = eating_time(data_shitang['消费时间'])
+
+# 统计分析每个食堂的早午晚餐刷卡次数。
+fig, axes = plt.subplots(2, 3, figsize = (12, 7))
+
+ax = axes.ravel()
+labels = data_shitang['消费地点'].unique()
+colors = list(map(lambda x:sns.xkcd_rgb[x], sns.xkcd_rgb.keys()))
+colors = np.random.choice(colors,5)
+
+ax_num = 0
+for label in labels:
+    data_ = data_shitang[data_shitang['消费地点']==label]  # 取出一个类别的数据
+    # 对该类别数据每个特征进行统计
+
+    d = data_['就餐类型'].value_counts()
+
+    ax[ax_num].pie(labels = d.index, x = d.values, autopct='%.1f%%',colors = colors)
+#        ax.pie(d.values, labels = d.values)
+    ax[ax_num].set_title(label, fontsize = 13)
+    ax_num+=1
+
+plt.subplots_adjust(0.2,0.2)
+
+# 使30分钟内的多次刷卡为一次刷卡记录
+def time_filter(x):
+    import datetime
+    # 初始化消费次数为刷卡次数
+    consums = len(x)
+    # 对消费时间进行降序
+    x = x.sort_values(ascending= False)
+    # 定义变量使得能跳出datetime1已经计算过的在十分钟内的datetime2
+    position = 0
+    for num,datetime1 in enumerate(x):
+        if position != 0:
+            position -= 1
+            continue
+        for datetime2 in x[num+1:]:
+            # 当时间小于30分钟时，consums消费次数-1
+            if datetime1-datetime2<datetime.timedelta(seconds = 1800):
+                consums -= 1
+                position +=1
+            else:
+                break
+    # 返回总消费次数
+    return consums
+
+# 获取每个食堂中每个客户的消费次数
+d = data_shitang.groupby(['消费地点','校园卡号'],as_index =False)['消费时间'].agg(time_filter)
+print(d)
+# 统计每个食堂的消费次数
+xiaofei_counts=d.groupby('消费地点')['消费时间'].sum()
+xiaofei_counts.name = '消费次数'
+print(xiaofei_counts)
+
+plt.pie(labels = xiaofei_counts.index,x = xiaofei_counts, autopct='%.1f%%')
+plt.title('各食堂总就餐人次占比饼图')
+plt.show()
+
+data_shitang_zaocan = data_shitang[data_shitang['就餐类型'] =='早餐']
+data_shitang_wucan = data_shitang[data_shitang['就餐类型'] =='午餐']
+data_shitang_wancan = data_shitang[data_shitang['就餐类型'] =='晚餐']
+data_shitang_ = [data_shitang_zaocan, data_shitang_wucan, data_shitang_wancan]
+data_leixing = ['早餐', '午餐', '晚餐']
+fig,axes = plt.subplots(1,3, figsize = (14,6))
+counts = [] # 存储早午晚餐统计数据
+for d, title, ax in zip(data_shitang_, data_leixing, axes):
+    d = d.groupby(['消费地点','校园卡号'],as_index =False)['消费时间'].agg(time_filter)
+    xiaofei_counts=d.groupby('消费地点')['消费时间'].sum()
+    xiaofei_counts.name = '消费次数'
+    counts.append(xiaofei_counts)
+    ax.pie(labels = xiaofei_counts.index,x = xiaofei_counts, autopct='%.1f%%')
+    ax.set_title(f'{title}各食堂就餐人次占比饼图')
+plt.show()
+# 获取小时数据
+data_shitang['就餐时间'] = data_shitang['消费时间'].apply(lambda x:x.hour)
+# 获取是否工作日
+from chinese_calendar import is_workday,is_holiday
+data_shitang['是否工作日'] = data_shitang['消费时间'].apply(lambda x: '工作日' if is_workday(x) else '非工作日')
+# 获取工作日与非工作日的每个时间刷卡次数统计
+data_isor_workday = data_shitang.groupby(['就餐时间','是否工作日']).size().unstack()
+print(data_isor_workday)
+# 工作日除以21天，非工作日除以9，得到日均刷卡次数
+data_isor_workday = data_isor_workday/np.array([21,9])
+# 缺失值填0处理（有的时段无刷卡次数，如凌晨）
+data_isor_workday = data_isor_workday.fillna(0).astype(np.int)
+
+plt.plot(data_isor_workday.index,data_isor_workday['工作日'], label = '工作日')
+plt.plot(data_isor_workday.index,data_isor_workday['非工作日'], label = '非工作日')
+plt.xlabel('时间')
+plt.ylabel('日均刷卡次数')
+plt.xticks(range(24))
+plt.legend()
+plt.show()
+# 3.学生消费行为分析
+d = data_2_1.groupby('校园卡号').agg({'消费次数':np.size,'消费金额':np.sum})[['消费金额','消费次数']]
+# 封装箱线图
+boxplot(data = d)
+# 依据箱线图去除异常数据
+d = d[ (d['消费金额'] < 800) & (d['消费次数'] < 180)]
+# 本月人均刷卡次数约72次 、人均消费总额288
+print(d.mean())
+
+#选取消费金额最大的三个专业
+# data_2_1 = data_2_1.groupby('专业名称')['消费金额'].sum().sort_values(ascending=False).head(4)
+# data_2_1
+
+# 不同专业不同性别人均刷卡金额对比图：
+data_3_zhuanye = data_2_1.query("专业名称 in ['18机械制造','18连锁经营','18软件技术']")
+a = data_3_zhuanye.groupby(['专业名称','性别'])['消费金额'].mean().unstack()
+a = np.round(a,2) # 小数点两位且四舍五入
+
+with sns.color_palette('rainbow_r'):
+    bar = a.plot.bar()
+    plt.xticks(rotation =0)
+    plt.title('平均每次刷卡金额')
+    for i in bar.containers:
+        plt.bar_label(i)
+
+# 不同专业不同性别就餐地点对比饼图：
+#封装函数
+def count_pieplot(data, rows =None, cols = None, hue =None, vars = None, show_value =False, qita_percentage_max = 0.0,
+            figsize = (12,8), color_style=None,subplots_adjust = (0.2,0.2)):
+    hue_name = hue  if isinstance(hue,str) or hue==None else hue.name
+    hue = data[hue] if isinstance(hue,str) and hue in data.columns else hue
+
+    labels = pd.unique(data[hue_name]).tolist() if hue_name !=None else []      # 获取类别
+    labels.remove(np.nan) if np.nan in labels else None  # 去除nan值
+    data = data if not vars else data[vars]
+
+    if rows and cols:
+        pie_rows = rows
+        pie_cols = cols
+    elif labels !=None:
+        pie_rows = len(labels) if len(labels)!=0 else 1  # 子图行数
+        pie_cols = sum(list(map(lambda x:isinstance(x, str),data.iloc[0, data.columns!=hue_name])))  # 子图列数
+    labels.append('') if labels==[] else None
+
+    fig, axes = plt.subplots(pie_rows, pie_cols, figsize = figsize)
+
+    ax = axes.ravel() if (pie_rows != 1) or (pie_cols !=1 ) else [axes]
+    colors = None if not color_style else np.random.choice(get_colors(color_style),10)
+
+    ax_num = 0
+    for label in labels:
+        data_ = data[hue==label] if label!='' else data  # 取出一个类别的数据
+        # 对该类别数据每个特征进行统计
+        for col in data.columns:
+            if isinstance(data[col].values[0], str) and col!=hue_name:
+                d = data_[col].value_counts()
+                d = qita(d,qita_percentage_max = qita_percentage_max)
+                bingtu(d.index, d.values, ax[ax_num], colors,  show_value = show_value)
+#                 ax.pie(d.values, labels = d.values)
+                ax[ax_num].set_title(label+' '+col, fontsize = 13)
+                ax_num+=1
+
+    plt.subplots_adjust(hspace = subplots_adjust[0],wspace=subplots_adjust[1])
+
+def bingtu(label,shuju,ax,colors = None, show_value = False):
+    def make_autopct(values):
+        def my_autopct(pct):
+            total = sum(values)
+            val = int(round(pct*total/100.0))
+            # 同时显示数值和占比的饼图
+            return '{p:.1f}%\n{v:d}'.format(p=pct,v=val)
+        return my_autopct
+    ax.pie(x = shuju,         # 绘图数据
+            explode = None,       # 突出显示特定人群
+            labels=label,         # 添加教育水平标签
+            colors=colors,         # 设置饼图的自定义填充色
+            autopct=make_autopct(shuju) if show_value else '%.1f%%',      # 设置百分比的格式，这里保留一位小数
+            pctdistance=0.7,       # 设置百分比标签与圆心的距离
+            labeldistance = 1.15,  # 设置教育水平标签与圆心的距离
+            startangle = 180,      # 设置饼图的初始角度
+            radius = 1,          # 设置饼图的半径
+            counterclock = False, # 是否逆时针，这里设置为顺时针方向
+            # 设置饼图内外边界的属性值：linewidth表示饼图内外边框线宽度；width表示饼图内外宽度，可控制生成环形图；edgecolor表示边框线的颜色
+            textprops = {'fontsize':12, 'color':'k'},   # 设置文本标签的属性值
+            center = (0,0),        # 设置饼图的原点
+            frame = 0)
+
+def qita(series_counts, qita_percentage_max = 0.05):
+    qita_sum = 0
+    for index, value in zip(series_counts.index, series_counts):
+        if value/sum(series_counts) < qita_percentage_max:
+            qita_sum += value
+            series_counts.drop(index,inplace = True)
+    if qita_sum != 0:
+        series_counts = pd.concat((series_counts,pd.Series({'其他':qita_sum})))
+    return series_counts
+with sns.color_palette('rainbow'):
+    count_pieplot(data_3_zhuanye,3,2,vars = ['消费地点','专业名称','性别'],hue = '专业名称',qita_percentage_max=  0.02,figsize=(6,11))
+
+with sns.color_palette('rainbow'):
+    count_pieplot(data_3_zhuanye,1,2,vars = ['消费地点'],hue = '性别',qita_percentage_max=  0.02,figsize=(10,4))
+# 不同专业男生消费地点饼图：
+with sns.color_palette('rainbow'):
+    count_pieplot(data_3_zhuanye.query("性别 == '男'"),1,3,vars = ['消费地点','专业名称'],hue = '专业名称',qita_percentage_max=  0.02,figsize=(16,4))
+# 不同专业女生消费地点饼图：
+with sns.color_palette('rainbow'):
+    count_pieplot(data_3_zhuanye.query("性别 == '女'"),1,3,vars = ['消费地点','专业名称'],hue = '专业名称',qita_percentage_max=  0.02,figsize=(16,4))
+import sklearn
+from sklearn import  cluster
+from sklearn.preprocessing import StandardScaler
+
+# 取出日常消费类型数据
+data_2_1_1 = data_2_1.query("消费地点 in ['第四食堂','第一食堂','第二食堂', '红太阳超市','第五食堂','第三食堂', '好利来食品店']")
+
+
+# 取出每次刷卡平均消费金额、总消费次数、消费总金额三个特征进行聚类
+data = data_2_1_1.groupby(['校园卡号'],as_index=False)['消费金额'].mean()
+data['本月内消费累计次数'] = data_2_1_1.groupby('校园卡号')['消费次数'].size().values
+data['消费总金额'] = data_2_1_1.groupby('校园卡号')['消费金额'].sum().values
+data = data.set_index('校园卡号')
+data.columns = ['平均每次刷卡消费金额','本月内累计消费次数','消费总金额']
+data
+
+# Kmeans聚类：
+# Kmeans聚类模型，七个聚类簇
+model = cluster.KMeans(n_clusters=7)
+# 标准化模型
+scaler = StandardScaler()
+# 标准化
+data_ = scaler.fit_transform(data.iloc[:,:])
+# 模型训练
+model.fit(data_)
+
+# 对数据进行聚类得到标签
+labels = model.predict(data_)
+
+# 将标签加入到data数据中
+data['labels'] = labels
+
+# 二维散点图
+sns.set(font='SimHei')
+sns.scatterplot(data =data , x = '本月内累计消费次数',y= '平均每次刷卡消费金额',hue = 'labels',palette = 'rainbow')
+plt.title('七个消费群体散点图')
+plt.show()
+
+# 三维散点图：
+colors = ['#a88f59', '#da467d', '#fdb915', '#69d84f', '#380282','r','b']
+from mpl_toolkits.mplot3d import Axes3D
+
+fig = plt.figure(figsize=(15,8))
+ax = fig.add_subplot(121, projection='3d')
+
+for i in data['labels'].unique():
+    d = data[data['labels']==i]
+    ax.scatter(d['本月内累计消费次数'],d['平均每次刷卡消费金额'],d['消费总金额'],c=colors[i],label =i)
+    ax.set_xlabel('本月内累计消费次数')
+    ax.set_ylabel('平均每次刷卡消费金额')
+    ax.set_zlabel('消费总金额')
+plt.title('高钾:层次聚类结果图',fontsize = 15)
+plt.legend()
+plt.show()
