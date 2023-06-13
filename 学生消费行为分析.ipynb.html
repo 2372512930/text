@@ -1,0 +1,408 @@
+<html>
+<head>
+<title>2.0.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+2.0.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% 
+# 1.数据的导入与预处理</span>
+<span class="s2">import </span><span class="s1">matplotlib.pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">pandas </span><span class="s2">as </span><span class="s1">pd</span>
+<span class="s2">import </span><span class="s1">seaborn </span><span class="s2">as </span><span class="s1">sns</span>
+<span class="s2">import </span><span class="s1">random</span>
+<span class="s1">plt.rcParams[</span><span class="s3">'font.family'</span><span class="s1">] = </span><span class="s3">'SimHei'      </span><span class="s0"># 正常显示中文</span>
+<span class="s1">plt.rcParams[</span><span class="s3">'axes.unicode_minus'</span><span class="s1">] = </span><span class="s2">False</span>
+<span class="s0">#学生表</span>
+<span class="s1">data1 = pd.read_csv(</span><span class="s3">r'E:\数据挖掘\data1.csv'</span><span class="s2">,</span><span class="s1">sep=</span><span class="s3">','</span><span class="s2">,</span><span class="s1">encoding=</span><span class="s3">'gbk'</span><span class="s1">)</span>
+<span class="s1">data1.columns =[</span><span class="s3">'序号'</span><span class="s2">,</span><span class="s3">'校园卡号'</span><span class="s2">,</span><span class="s3">'性别'</span><span class="s2">,</span><span class="s3">'专业名称'</span><span class="s2">,</span><span class="s3">'门禁卡号'</span><span class="s1">]</span>
+<span class="s0">#消费表</span>
+<span class="s1">data2 = pd.read_csv(</span><span class="s3">r'E:\数据挖掘\data2.csv'</span><span class="s2">,</span><span class="s1">sep=</span><span class="s3">','</span><span class="s2">,</span><span class="s1">encoding=</span><span class="s3">'gbk'</span><span class="s1">)</span>
+<span class="s1">data2.columns=[</span><span class="s3">'流水号'</span><span class="s2">,</span><span class="s3">'校园卡号'</span><span class="s2">,</span><span class="s3">'学号'</span><span class="s2">,</span><span class="s3">'消费时间'</span><span class="s2">,</span><span class="s3">'消费金额'</span><span class="s2">,</span><span class="s3">'充值金额'</span><span class="s2">,</span><span class="s3">'余额'</span><span class="s2">,</span>
+               <span class="s3">'消费次数'</span><span class="s2">,</span><span class="s3">'消费类型'</span><span class="s2">,</span><span class="s3">'消费项目编码'</span><span class="s2">,</span><span class="s3">'消费项目序号'</span><span class="s2">,</span><span class="s3">'消费操作编码'</span><span class="s2">,</span><span class="s3">'操作编码'</span><span class="s2">,</span><span class="s3">'消费地点'</span><span class="s1">]</span>
+<span class="s1">data2</span>
+<span class="s0">#学生出入表</span>
+<span class="s1">data3 = pd.read_csv(</span><span class="s3">r'E:\数据挖掘\data3.csv'</span><span class="s2">,</span><span class="s1">sep=</span><span class="s3">','</span><span class="s2">,</span><span class="s1">encoding=</span><span class="s3">'gbk'</span><span class="s1">)</span>
+<span class="s1">data3.columns =[</span><span class="s3">'序号'</span><span class="s2">,</span><span class="s3">'门禁卡号'</span><span class="s2">,</span><span class="s3">'出入日期'</span><span class="s2">,</span><span class="s3">'出入地点'</span><span class="s2">,</span><span class="s3">'进出成功编号'</span><span class="s2">,</span><span class="s3">'通过权限'</span><span class="s1">]</span>
+<span class="s1">data3</span>
+<span class="s0">#查看缺失值</span>
+<span class="s0"># data1.isnull().sum()</span>
+<span class="s1">data2.isnull().sum()</span>
+<span class="s0"># data3.isnull().sum()</span>
+<span class="s0">#%% 
+</span>
+<span class="s0"># 删除缺失值过多的列</span>
+<span class="s1">data2 = data2.drop([</span><span class="s3">'消费项目序号'</span><span class="s2">,</span><span class="s3">'消费操作编码'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">axis = </span><span class="s4">1</span><span class="s1">) </span><span class="s0">#axis = 1表示删除这两列</span>
+<span class="s0"># data2</span>
+<span class="s0">#%% 
+</span><span class="s2">def </span><span class="s1">get_colors(color_style):</span>
+    <span class="s1">cnames = sns.xkcd_rgb</span>
+    <span class="s2">if </span><span class="s1">color_style ==</span><span class="s3">'light'</span><span class="s1">:</span>
+        <span class="s1">colors = list(filter(</span><span class="s2">lambda </span><span class="s1">x:x[:</span><span class="s4">5</span><span class="s1">]==</span><span class="s3">'light'</span><span class="s2">,</span><span class="s1">cnames.keys()))</span>
+    <span class="s2">elif </span><span class="s1">color_style ==</span><span class="s3">'dark'</span><span class="s1">:</span>
+        <span class="s1">colors = list(filter(</span><span class="s2">lambda </span><span class="s1">x:x[:</span><span class="s4">4</span><span class="s1">]==</span><span class="s3">'dark'</span><span class="s2">,</span><span class="s1">cnames.keys()))</span>
+    <span class="s2">elif </span><span class="s1">color_style ==</span><span class="s3">'all'</span><span class="s1">:</span>
+        <span class="s1">colors = cnames.keys()</span>
+    <span class="s1">colors = list(map(</span><span class="s2">lambda </span><span class="s1">x:cnames[x]</span><span class="s2">, </span><span class="s1">colors))</span>
+    <span class="s2">return </span><span class="s1">colors</span>
+<span class="s0"># 封装箱线图</span>
+<span class="s2">def </span><span class="s1">boxplot(data</span><span class="s2">, </span><span class="s1">rows = </span><span class="s4">3</span><span class="s2">, </span><span class="s1">cols = </span><span class="s4">4</span><span class="s2">, </span><span class="s1">figsize = (</span><span class="s4">20</span><span class="s2">, </span><span class="s4">15</span><span class="s1">)</span><span class="s2">, </span><span class="s1">vars  =</span><span class="s2">None, </span><span class="s1">hue = </span><span class="s2">None, </span><span class="s1">width = </span><span class="s4">0.25</span><span class="s2">,</span>
+            <span class="s1">color_style =</span><span class="s3">'light'</span><span class="s2">,</span><span class="s1">subplots_adjust = (</span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.2</span><span class="s1">)):</span>
+
+    <span class="s1">fig = plt.figure(figsize = figsize)</span>
+    <span class="s1">hue = data[hue] </span><span class="s2">if </span><span class="s1">isinstance(hue</span><span class="s2">,</span><span class="s1">str) </span><span class="s2">and </span><span class="s1">hue </span><span class="s2">in </span><span class="s1">data.columns </span><span class="s2">else </span><span class="s1">hue</span>
+    <span class="s1">data = data </span><span class="s2">if not </span><span class="s1">vars </span><span class="s2">else </span><span class="s1">data[vars]</span>
+
+    <span class="s1">colors = get_colors(color_style)</span>
+    <span class="s1">ax_num = </span><span class="s4">1</span>
+    <span class="s2">for </span><span class="s1">col </span><span class="s2">in </span><span class="s1">data.columns:</span>
+        <span class="s2">if </span><span class="s1">isinstance(data[col].values[</span><span class="s4">0</span><span class="s1">]</span><span class="s2">,</span><span class="s1">(np.int64</span><span class="s2">,</span><span class="s1">np.int32</span><span class="s2">,</span><span class="s1">np.int16</span><span class="s2">,</span><span class="s1">np.int8</span><span class="s2">,</span><span class="s1">np.float16</span><span class="s2">,</span><span class="s1">np.float32</span><span class="s2">,</span><span class="s1">np.float64)):</span><span class="s0">#遍历数据集中每一列，判断它们是否为数值型数据。</span>
+            <span class="s1">plt.subplot(rows</span><span class="s2">, </span><span class="s1">cols</span><span class="s2">, </span><span class="s1">ax_num)</span>
+            <span class="s1">sns.boxplot(x = hue</span><span class="s2">,</span><span class="s1">y = data[col].values</span><span class="s2">,</span><span class="s1">color=random.sample(colors</span><span class="s2">,</span><span class="s4">1</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">]</span><span class="s2">,</span><span class="s1">width= width)</span>
+            <span class="s1">plt.xlabel(col)</span>
+<span class="s0">#             data[col].plot(kind = 'box',color=random.sample(colors,1)[0])</span>
+            <span class="s1">ax_num+=</span><span class="s4">1</span>
+
+    <span class="s1">plt.subplots_adjust(hspace = subplots_adjust[</span><span class="s4">0</span><span class="s1">]</span><span class="s2">,</span><span class="s1">wspace=subplots_adjust[</span><span class="s4">1</span><span class="s1">])</span><span class="s0">#调整子图之间的间距</span>
+    <span class="s1">plt.show()</span>
+<span class="s0"># 对data1异常值分析</span>
+<span class="s1">boxplot(data1[[</span><span class="s3">'校园卡号'</span><span class="s2">,</span><span class="s3">'门禁卡号'</span><span class="s1">]])</span>
+<span class="s0"># 探索校园卡号异常数据：</span>
+<span class="s1">data1[data1[</span><span class="s3">'校园卡号'</span><span class="s1">]&lt;</span><span class="s4">177500</span><span class="s1">]</span>
+<span class="s0">#%% 
+# 修改数据</span>
+<span class="s1">data1[</span><span class="s3">'校园卡号'</span><span class="s1">].replace({</span><span class="s4">164340</span><span class="s1">:</span><span class="s4">184340</span><span class="s2">,</span><span class="s4">164341</span><span class="s1">:</span><span class="s4">184341</span><span class="s1">}</span><span class="s2">,</span><span class="s1">inplace=</span><span class="s2">True</span><span class="s1">)</span>
+<span class="s0">#查询门禁卡号的异常值</span>
+<span class="s1">data3[data3[</span><span class="s3">'门禁卡号'</span><span class="s1">]&lt;</span><span class="s4">100000</span><span class="s1">]</span>
+<span class="s0">#对data2进行异常值分析</span>
+<span class="s1">boxplot(data2)</span>
+<span class="s0"># data2[data2['消费次数']&gt;3000]</span>
+<span class="s0">#%% 
+# 表连接</span>
+<span class="s1">data_2_1 = pd.merge(data1</span><span class="s2">, </span><span class="s1">data2</span><span class="s2">, </span><span class="s1">on=</span><span class="s3">'校园卡号'</span><span class="s1">)</span>
+
+<span class="s1">data_2_1 = data_2_1[data_2_1[</span><span class="s3">'消费类型'</span><span class="s1">] == </span><span class="s3">'消费'</span><span class="s1">]  </span><span class="s0">#取出为消费记录的数据。</span>
+<span class="s1">data_2_1[data_2_1[</span><span class="s3">'消费次数'</span><span class="s1">]&gt;</span><span class="s4">3000</span><span class="s1">]</span>
+<span class="s1">data_2_1[data_2_1[</span><span class="s3">'校园卡号'</span><span class="s1">]&lt;</span><span class="s4">150000</span><span class="s1">]</span>
+<span class="s1">data_2_2 = pd.merge(data1</span><span class="s2">, </span><span class="s1">data3</span><span class="s2">, </span><span class="s1">on=</span><span class="s3">'门禁卡号'</span><span class="s1">)</span>
+<span class="s0">#%% 
+</span>
+<span class="s2">import </span><span class="s1">pandas </span><span class="s2">as </span><span class="s1">pd</span>
+<span class="s2">from </span><span class="s1">sklearn.cluster </span><span class="s2">import </span><span class="s1">KMeans</span>
+
+<span class="s0"># 取出食堂的消费记录数据</span>
+<span class="s1">data_shitang = data2[(data2[</span><span class="s3">'消费地点'</span><span class="s1">].map(</span><span class="s2">lambda </span><span class="s1">x:</span><span class="s3">'食堂' </span><span class="s2">in </span><span class="s1">x)) &amp; (data2[</span><span class="s3">'消费类型'</span><span class="s1">] ==</span><span class="s3">'消费'</span><span class="s1">)]</span>
+<span class="s1">data_shitang[</span><span class="s3">'消费时间'</span><span class="s1">] = pd.to_datetime(data_shitang[</span><span class="s3">'消费时间'</span><span class="s1">])</span>
+
+<span class="s0"># 将时间转换为小时数</span>
+<span class="s1">hours = data_shitang[</span><span class="s3">'消费时间'</span><span class="s1">].apply(</span><span class="s2">lambda </span><span class="s1">x: x.hour).values.reshape(-</span><span class="s4">1</span><span class="s2">, </span><span class="s4">1</span><span class="s1">)</span>
+
+<span class="s0"># 进行 k-means 聚类，假设聚为3类</span>
+<span class="s1">kmeans = KMeans(n_clusters=</span><span class="s4">3</span><span class="s1">).fit(hours)</span>
+
+<span class="s0"># 获取聚类结果标签</span>
+<span class="s1">labels = kmeans.predict(hours)</span>
+
+<span class="s0"># 在DataFrame中新增一列标签和就餐类型</span>
+<span class="s1">data_shitang[</span><span class="s3">'聚类标签'</span><span class="s1">] = labels</span>
+<span class="s1">data_shitang[</span><span class="s3">'就餐类型'</span><span class="s1">] = data_shitang[</span><span class="s3">'聚类标签'</span><span class="s1">].apply(</span><span class="s2">lambda </span><span class="s1">x: </span><span class="s3">'晚餐' </span><span class="s2">if </span><span class="s1">x == </span><span class="s4">0 </span><span class="s2">else </span><span class="s3">'早餐' </span><span class="s2">if </span><span class="s1">x == </span><span class="s4">1 </span><span class="s2">else </span><span class="s3">'午餐'</span><span class="s1">)</span>
+
+<span class="s1">data_shitang</span>
+<span class="s0">#%% 
+# 统计分析每个食堂的早午晚餐刷卡次数。</span>
+<span class="s1">fig</span><span class="s2">, </span><span class="s1">axes = plt.subplots(</span><span class="s4">2</span><span class="s2">, </span><span class="s4">3</span><span class="s2">, </span><span class="s1">figsize = (</span><span class="s4">12</span><span class="s2">, </span><span class="s4">7</span><span class="s1">))</span>
+<span class="s1">ax = axes.ravel()</span>
+<span class="s1">labels = data_shitang[</span><span class="s3">'消费地点'</span><span class="s1">].unique()</span>
+<span class="s1">colors = list(map(</span><span class="s2">lambda </span><span class="s1">x:sns.xkcd_rgb[x]</span><span class="s2">, </span><span class="s1">sns.xkcd_rgb.keys()))</span>
+<span class="s1">colors = np.random.choice(colors</span><span class="s2">,</span><span class="s4">6</span><span class="s1">)</span>
+<span class="s1">ax_num = </span><span class="s4">0</span>
+<span class="s2">for </span><span class="s1">label </span><span class="s2">in </span><span class="s1">labels:</span>
+    <span class="s1">data_ = data_shitang[data_shitang[</span><span class="s3">'消费地点'</span><span class="s1">]==label]  </span><span class="s0"># 取出一个类别的数据</span>
+    <span class="s0"># 对该类别数据每个特征进行统计</span>
+    <span class="s1">d = data_[</span><span class="s3">'就餐类型'</span><span class="s1">].value_counts()</span>
+    <span class="s1">ax[ax_num].pie(labels = d.index</span><span class="s2">, </span><span class="s1">x = d.values</span><span class="s2">, </span><span class="s1">autopct=</span><span class="s3">'%.1f%%'</span><span class="s2">,</span><span class="s1">colors = colors)</span>
+    <span class="s1">ax[ax_num].set_title(label</span><span class="s2">, </span><span class="s1">fontsize = </span><span class="s4">13</span><span class="s1">)</span>
+    <span class="s1">ax_num+=</span><span class="s4">1</span>
+
+<span class="s1">plt.subplots_adjust(</span><span class="s4">0.2</span><span class="s2">,</span><span class="s4">0.2</span><span class="s1">)</span>
+<span class="s0">#%% 
+# 分析早中晚的各食堂就餐行为并绘制饼图：</span>
+<span class="s0"># 使30分钟内的多次刷卡为一次刷卡记录</span>
+<span class="s2">def </span><span class="s1">time_filter(x):</span>
+    <span class="s2">import </span><span class="s1">datetime</span>
+    <span class="s0"># 初始化消费次数为刷卡次数</span>
+    <span class="s1">consums = len(x)</span>
+    <span class="s0"># 对消费时间进行降序</span>
+    <span class="s1">x = x.sort_values(ascending= </span><span class="s2">False</span><span class="s1">)</span>
+    <span class="s0"># 定义变量使得能跳出datetime1已经计算过的在十分钟内的datetime2</span>
+    <span class="s1">position = </span><span class="s4">0</span>
+    <span class="s2">for </span><span class="s1">num</span><span class="s2">,</span><span class="s1">datetime1 </span><span class="s2">in </span><span class="s1">enumerate(x):</span>
+        <span class="s2">if </span><span class="s1">position != </span><span class="s4">0</span><span class="s1">:</span>
+            <span class="s1">position -= </span><span class="s4">1</span>
+            <span class="s2">continue</span>
+        <span class="s2">for </span><span class="s1">datetime2 </span><span class="s2">in </span><span class="s1">x[num+</span><span class="s4">1</span><span class="s1">:]:</span>
+            <span class="s0"># 当时间小于30分钟时，consums消费次数-1</span>
+            <span class="s2">if </span><span class="s1">datetime1-datetime2&lt;datetime.timedelta(seconds = </span><span class="s4">1800</span><span class="s1">):</span>
+                <span class="s1">consums -= </span><span class="s4">1</span>
+                <span class="s1">position +=</span><span class="s4">1</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s2">break</span>
+    <span class="s0"># 返回总消费次数</span>
+    <span class="s2">return </span><span class="s1">consums</span>
+<span class="s0"># 获取每个食堂中每个客户的消费次数</span>
+<span class="s1">d = data_shitang.groupby([</span><span class="s3">'消费地点'</span><span class="s2">,</span><span class="s3">'校园卡号'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">as_index =</span><span class="s2">False</span><span class="s1">)[</span><span class="s3">'消费时间'</span><span class="s1">].agg(time_filter)</span>
+<span class="s1">print(d)</span>
+<span class="s0"># 统计每个食堂的消费次数</span>
+<span class="s1">xiaofei_counts=d.groupby(</span><span class="s3">'消费地点'</span><span class="s1">)[</span><span class="s3">'消费时间'</span><span class="s1">].sum()</span>
+<span class="s1">xiaofei_counts.name = </span><span class="s3">'消费次数'</span>
+<span class="s1">print(xiaofei_counts)</span>
+
+<span class="s1">plt.pie(labels = xiaofei_counts.index</span><span class="s2">,</span><span class="s1">x = xiaofei_counts</span><span class="s2">, </span><span class="s1">autopct=</span><span class="s3">'%.1f%%'</span><span class="s1">)</span>
+<span class="s1">plt.title(</span><span class="s3">'各食堂总就餐人次占比饼图'</span><span class="s1">)</span>
+<span class="s1">plt.show()</span>
+<span class="s0">#%% 
+</span><span class="s1">data_shitang_zaocan = data_shitang[data_shitang[</span><span class="s3">'就餐类型'</span><span class="s1">] ==</span><span class="s3">'早餐'</span><span class="s1">]</span>
+<span class="s1">data_shitang_wucan = data_shitang[data_shitang[</span><span class="s3">'就餐类型'</span><span class="s1">] ==</span><span class="s3">'午餐'</span><span class="s1">]</span>
+<span class="s1">data_shitang_wancan = data_shitang[data_shitang[</span><span class="s3">'就餐类型'</span><span class="s1">] ==</span><span class="s3">'晚餐'</span><span class="s1">]</span>
+<span class="s1">data_shitang_ = [data_shitang_zaocan</span><span class="s2">, </span><span class="s1">data_shitang_wucan</span><span class="s2">, </span><span class="s1">data_shitang_wancan]</span>
+<span class="s1">data_leixing = [</span><span class="s3">'早餐'</span><span class="s2">, </span><span class="s3">'午餐'</span><span class="s2">, </span><span class="s3">'晚餐'</span><span class="s1">]</span>
+<span class="s1">fig</span><span class="s2">,</span><span class="s1">axes = plt.subplots(</span><span class="s4">1</span><span class="s2">,</span><span class="s4">3</span><span class="s2">, </span><span class="s1">figsize = (</span><span class="s4">14</span><span class="s2">,</span><span class="s4">6</span><span class="s1">))</span>
+<span class="s1">counts = [] </span><span class="s0"># 存储早午晚餐统计数据</span>
+<span class="s2">for </span><span class="s1">d</span><span class="s2">, </span><span class="s1">title</span><span class="s2">, </span><span class="s1">ax </span><span class="s2">in </span><span class="s1">zip(data_shitang_</span><span class="s2">, </span><span class="s1">data_leixing</span><span class="s2">, </span><span class="s1">axes):</span>
+    <span class="s1">d = d.groupby([</span><span class="s3">'消费地点'</span><span class="s2">,</span><span class="s3">'校园卡号'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">as_index =</span><span class="s2">False</span><span class="s1">)[</span><span class="s3">'消费时间'</span><span class="s1">].agg(time_filter)</span>
+    <span class="s1">xiaofei_counts=d.groupby(</span><span class="s3">'消费地点'</span><span class="s1">)[</span><span class="s3">'消费时间'</span><span class="s1">].sum()</span>
+    <span class="s1">xiaofei_counts.name = </span><span class="s3">'消费次数'</span>
+    <span class="s1">counts.append(xiaofei_counts)</span>
+    <span class="s1">ax.pie(labels = xiaofei_counts.index</span><span class="s2">,</span><span class="s1">x = xiaofei_counts</span><span class="s2">, </span><span class="s1">autopct=</span><span class="s3">'%.1f%%'</span><span class="s1">)</span>
+    <span class="s1">ax.set_title(</span><span class="s3">f'</span><span class="s2">{</span><span class="s1">title</span><span class="s2">}</span><span class="s3">各食堂就餐人次占比饼图'</span><span class="s1">)</span>
+<span class="s1">plt.show()</span>
+<span class="s0">#%% 
+#绘制工作日与非工作日的时间曲线图</span>
+<span class="s0"># 获取小时数据</span>
+<span class="s1">data_shitang[</span><span class="s3">'就餐时间'</span><span class="s1">] = data_shitang[</span><span class="s3">'消费时间'</span><span class="s1">].apply(</span><span class="s2">lambda </span><span class="s1">x:x.hour)</span>
+<span class="s0"># 获取是否工作日</span>
+<span class="s2">from </span><span class="s1">chinese_calendar </span><span class="s2">import </span><span class="s1">is_workday</span><span class="s2">,</span><span class="s1">is_holiday</span>
+<span class="s1">data_shitang[</span><span class="s3">'是否工作日'</span><span class="s1">] = data_shitang[</span><span class="s3">'消费时间'</span><span class="s1">].apply(</span><span class="s2">lambda </span><span class="s1">x: </span><span class="s3">'工作日' </span><span class="s2">if </span><span class="s1">is_workday(x) </span><span class="s2">else </span><span class="s3">'非工作日'</span><span class="s1">)</span>
+<span class="s0"># 获取工作日与非工作日的每个时间刷卡次数统计</span>
+<span class="s1">data_isor_workday = data_shitang.groupby([</span><span class="s3">'就餐时间'</span><span class="s2">,</span><span class="s3">'是否工作日'</span><span class="s1">]).size().unstack()</span>
+<span class="s0"># print(data_isor_workday)</span>
+<span class="s0"># 工作日除以21天，非工作日除以9，得到日均刷卡次数</span>
+<span class="s1">data_isor_workday = data_isor_workday/np.array([</span><span class="s4">21</span><span class="s2">,</span><span class="s4">9</span><span class="s1">])</span>
+<span class="s0"># # 缺失值填0处理（有的时段无刷卡次数，如凌晨）</span>
+<span class="s1">data_isor_workday = data_isor_workday.fillna(</span><span class="s4">0</span><span class="s1">).astype(np.int)</span>
+<span class="s1">data_isor_workday</span>
+
+<span class="s1">fig</span><span class="s2">, </span><span class="s1">ax = plt.subplots()</span>
+<span class="s1">ax.plot(data_isor_workday.index</span><span class="s2">, </span><span class="s1">data_isor_workday[</span><span class="s3">'工作日'</span><span class="s1">]</span><span class="s2">, </span><span class="s1">label=</span><span class="s3">'工作日'</span><span class="s1">)</span>
+<span class="s1">ax.plot(data_isor_workday.index</span><span class="s2">, </span><span class="s1">data_isor_workday[</span><span class="s3">'非工作日'</span><span class="s1">]</span><span class="s2">, </span><span class="s1">label=</span><span class="s3">'非工作日'</span><span class="s1">)</span>
+<span class="s0">#</span>
+<span class="s0"># 工作日峰值</span>
+<span class="s1">max_y_workday = data_isor_workday[</span><span class="s3">'工作日'</span><span class="s1">].max()</span>
+<span class="s1">max_x_workday = data_isor_workday[</span><span class="s3">'工作日'</span><span class="s1">].idxmax()</span>
+<span class="s1">ax.annotate(</span><span class="s3">f'工作日峰值：</span><span class="s2">{</span><span class="s1">max_y_workday</span><span class="s2">}</span><span class="s3">'</span><span class="s2">, </span><span class="s1">xy=(max_x_workday</span><span class="s2">, </span><span class="s1">max_y_workday)</span><span class="s2">, </span><span class="s1">xytext=(max_x_workday + </span><span class="s4">1</span><span class="s2">, </span><span class="s1">max_y_workday + </span><span class="s4">0.5</span><span class="s1">)</span><span class="s2">,</span>
+             <span class="s1">arrowprops=dict(facecolor=</span><span class="s3">'black'</span><span class="s2">, </span><span class="s1">shrink=</span><span class="s4">0.05</span><span class="s1">))</span>
+
+<span class="s0"># 非工作日峰值</span>
+<span class="s1">max_y_nonworkday = data_isor_workday[</span><span class="s3">'非工作日'</span><span class="s1">].max()</span>
+<span class="s1">max_x_nonworkday = data_isor_workday[</span><span class="s3">'非工作日'</span><span class="s1">].idxmax()</span>
+<span class="s1">ax.annotate(</span><span class="s3">f'非工作日峰值：</span><span class="s2">{</span><span class="s1">max_y_nonworkday</span><span class="s2">}</span><span class="s3">'</span><span class="s2">, </span><span class="s1">xy=(max_x_nonworkday</span><span class="s2">, </span><span class="s1">max_y_nonworkday)</span><span class="s2">, </span><span class="s1">xytext=(max_x_nonworkday + </span><span class="s4">1</span><span class="s2">, </span><span class="s1">max_y_nonworkday + </span><span class="s4">0.5</span><span class="s1">)</span><span class="s2">,</span>
+             <span class="s1">arrowprops=dict(facecolor=</span><span class="s3">'black'</span><span class="s2">, </span><span class="s1">shrink=</span><span class="s4">0.05</span><span class="s1">))</span>
+<span class="s0">#每个转折点的值</span>
+<span class="s0"># for column in data_isor_workday.columns:</span>
+<span class="s0">#     for i, row in data_isor_workday.iterrows():</span>
+<span class="s0">#         if i == 0:</span>
+<span class="s0">#             continue</span>
+<span class="s0">#         if row[column] &gt; data_isor_workday.iloc[i-1][column] and row[column] &gt; data_isor_workday.iloc[i+1][column]:</span>
+<span class="s0">#             ax.annotate(f'{row[column]}', xy=(i, row[column]), xytext=(i+0.5, row[column]+0.5),</span>
+<span class="s0">#                          arrowprops=dict(facecolor='black', shrink=0.05))</span>
+<span class="s1">plt.xlabel(</span><span class="s3">'时间'</span><span class="s1">)</span>
+<span class="s1">plt.ylabel(</span><span class="s3">'日均刷卡次数'</span><span class="s1">)</span>
+<span class="s1">plt.xticks(range(</span><span class="s4">24</span><span class="s1">))</span>
+<span class="s1">plt.legend()</span>
+<span class="s1">plt.show()</span>
+<span class="s0">#%% 
+# 3.学生消费行为分析</span>
+<span class="s1">d = data_2_1.groupby(</span><span class="s3">'校园卡号'</span><span class="s1">).agg({</span><span class="s3">'消费次数'</span><span class="s1">:np.size</span><span class="s2">,</span><span class="s3">'消费金额'</span><span class="s1">:np.sum})[[</span><span class="s3">'消费金额'</span><span class="s2">,</span><span class="s3">'消费次数'</span><span class="s1">]]</span>
+<span class="s0"># 封装箱线图</span>
+<span class="s1">boxplot(data = d)</span>
+<span class="s0"># 依据箱线图去除异常数据</span>
+<span class="s1">d = d[ (d[</span><span class="s3">'消费金额'</span><span class="s1">] &lt; </span><span class="s4">1000</span><span class="s1">) &amp; (d[</span><span class="s3">'消费次数'</span><span class="s1">] &lt; </span><span class="s4">210</span><span class="s1">)]</span>
+<span class="s0"># # 本月人均刷卡次数约73次 、人均消费总额288</span>
+<span class="s1">print(d.mean())</span>
+<span class="s0">#%% 
+#选取消费金额最大的三个专业</span>
+<span class="s1">data_2_1 = data_2_1.groupby(</span><span class="s3">'专业名称'</span><span class="s1">)[</span><span class="s3">'消费金额'</span><span class="s1">].sum().sort_values(ascending=</span><span class="s2">False</span><span class="s1">).head(</span><span class="s4">3</span><span class="s1">) </span><span class="s0">#按照消费金额从大到小进行排序</span>
+<span class="s1">data_2_1</span>
+<span class="s0">#%% 
+</span>
+<span class="s0"># 不同专业不同性别人均刷卡金额对比图：</span>
+<span class="s1">data_3_zhuanye = data_2_1.query(</span><span class="s3">&quot;专业名称 in ['18机械制造','18连锁经营','18软件技术']&quot;</span><span class="s1">)</span>
+
+<span class="s1">a = data_3_zhuanye.groupby([</span><span class="s3">'专业名称'</span><span class="s2">,</span><span class="s3">'性别'</span><span class="s1">])[</span><span class="s3">'消费金额'</span><span class="s1">].mean().unstack()</span>
+<span class="s1">a = np.round(a</span><span class="s2">,</span><span class="s4">2</span><span class="s1">) </span><span class="s0"># 小数点两位且四舍五入</span>
+
+<span class="s2">with </span><span class="s1">sns.color_palette(</span><span class="s3">'rainbow_r'</span><span class="s1">):</span>
+    <span class="s1">bar = a.plot.bar()</span>
+    <span class="s1">plt.xticks(rotation =</span><span class="s4">0</span><span class="s1">)</span>
+    <span class="s1">plt.title(</span><span class="s3">'平均每次刷卡金额'</span><span class="s1">)</span>
+    <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">bar.containers:</span>
+        <span class="s1">plt.bar_label(i)</span>
+<span class="s0">#%% 
+# 不同专业不同性别就餐地点对比饼图：</span>
+<span class="s0">#饼图封装函数</span>
+<span class="s2">def </span><span class="s1">count_pieplot(data</span><span class="s2">, </span><span class="s1">rows =</span><span class="s2">None, </span><span class="s1">cols = </span><span class="s2">None, </span><span class="s1">hue =</span><span class="s2">None, </span><span class="s1">vars = </span><span class="s2">None, </span><span class="s1">show_value =</span><span class="s2">False, </span><span class="s1">qita_percentage_max = </span><span class="s4">0.0</span><span class="s2">,</span>
+            <span class="s1">figsize = (</span><span class="s4">12</span><span class="s2">,</span><span class="s4">8</span><span class="s1">)</span><span class="s2">, </span><span class="s1">color_style=</span><span class="s2">None,</span><span class="s1">subplots_adjust = (</span><span class="s4">0.2</span><span class="s2">,</span><span class="s4">0.2</span><span class="s1">)):</span>
+    <span class="s1">hue_name = hue  </span><span class="s2">if </span><span class="s1">isinstance(hue</span><span class="s2">,</span><span class="s1">str) </span><span class="s2">or </span><span class="s1">hue==</span><span class="s2">None else </span><span class="s1">hue.name</span>
+    <span class="s1">hue = data[hue] </span><span class="s2">if </span><span class="s1">isinstance(hue</span><span class="s2">,</span><span class="s1">str) </span><span class="s2">and </span><span class="s1">hue </span><span class="s2">in </span><span class="s1">data.columns </span><span class="s2">else </span><span class="s1">hue</span>
+
+    <span class="s1">labels = pd.unique(data[hue_name]).tolist() </span><span class="s2">if </span><span class="s1">hue_name !=</span><span class="s2">None else </span><span class="s1">[]      </span><span class="s0"># 获取类别</span>
+    <span class="s1">labels.remove(np.nan) </span><span class="s2">if </span><span class="s1">np.nan </span><span class="s2">in </span><span class="s1">labels </span><span class="s2">else None  </span><span class="s0"># 去除nan值</span>
+    <span class="s1">data = data </span><span class="s2">if not </span><span class="s1">vars </span><span class="s2">else </span><span class="s1">data[vars]</span>
+
+    <span class="s2">if </span><span class="s1">rows </span><span class="s2">and </span><span class="s1">cols:</span>
+        <span class="s1">pie_rows = rows</span>
+        <span class="s1">pie_cols = cols</span>
+    <span class="s2">elif </span><span class="s1">labels !=</span><span class="s2">None</span><span class="s1">:</span>
+        <span class="s1">pie_rows = len(labels) </span><span class="s2">if </span><span class="s1">len(labels)!=</span><span class="s4">0 </span><span class="s2">else </span><span class="s4">1  </span><span class="s0"># 子图行数</span>
+        <span class="s1">pie_cols = sum(list(map(</span><span class="s2">lambda </span><span class="s1">x:isinstance(x</span><span class="s2">, </span><span class="s1">str)</span><span class="s2">,</span><span class="s1">data.iloc[</span><span class="s4">0</span><span class="s2">, </span><span class="s1">data.columns!=hue_name])))  </span><span class="s0"># 子图列数</span>
+    <span class="s1">labels.append(</span><span class="s3">''</span><span class="s1">) </span><span class="s2">if </span><span class="s1">labels==[] </span><span class="s2">else None</span>
+
+    <span class="s1">fig</span><span class="s2">, </span><span class="s1">axes = plt.subplots(pie_rows</span><span class="s2">, </span><span class="s1">pie_cols</span><span class="s2">, </span><span class="s1">figsize = figsize)</span>
+
+    <span class="s1">ax = axes.ravel() </span><span class="s2">if </span><span class="s1">(pie_rows != </span><span class="s4">1</span><span class="s1">) </span><span class="s2">or </span><span class="s1">(pie_cols !=</span><span class="s4">1 </span><span class="s1">) </span><span class="s2">else </span><span class="s1">[axes]</span>
+    <span class="s1">colors = </span><span class="s2">None if not </span><span class="s1">color_style </span><span class="s2">else </span><span class="s1">np.random.choice(get_colors(color_style)</span><span class="s2">,</span><span class="s4">10</span><span class="s1">)</span>
+
+    <span class="s1">ax_num = </span><span class="s4">0</span>
+    <span class="s2">for </span><span class="s1">label </span><span class="s2">in </span><span class="s1">labels:</span>
+        <span class="s1">data_ = data[hue==label] </span><span class="s2">if </span><span class="s1">label!=</span><span class="s3">'' </span><span class="s2">else </span><span class="s1">data  </span><span class="s0"># 取出一个类别的数据</span>
+        <span class="s0"># 对该类别数据每个特征进行统计</span>
+        <span class="s2">for </span><span class="s1">col </span><span class="s2">in </span><span class="s1">data.columns:</span>
+            <span class="s2">if </span><span class="s1">isinstance(data[col].values[</span><span class="s4">0</span><span class="s1">]</span><span class="s2">, </span><span class="s1">str) </span><span class="s2">and </span><span class="s1">col!=hue_name:</span>
+                <span class="s1">d = data_[col].value_counts()</span>
+                <span class="s1">d = qita(d</span><span class="s2">,</span><span class="s1">qita_percentage_max = qita_percentage_max)</span>
+                <span class="s1">bingtu(d.index</span><span class="s2">, </span><span class="s1">d.values</span><span class="s2">, </span><span class="s1">ax[ax_num]</span><span class="s2">, </span><span class="s1">colors</span><span class="s2">,  </span><span class="s1">show_value = show_value)</span>
+<span class="s0">#                 ax.pie(d.values, labels = d.values)</span>
+                <span class="s1">ax[ax_num].set_title(label+</span><span class="s3">' '</span><span class="s1">+col</span><span class="s2">, </span><span class="s1">fontsize = </span><span class="s4">13</span><span class="s1">)</span>
+                <span class="s1">ax_num+=</span><span class="s4">1</span>
+
+    <span class="s1">plt.subplots_adjust(hspace = subplots_adjust[</span><span class="s4">0</span><span class="s1">]</span><span class="s2">,</span><span class="s1">wspace=subplots_adjust[</span><span class="s4">1</span><span class="s1">])</span>
+
+<span class="s2">def </span><span class="s1">bingtu(label</span><span class="s2">,</span><span class="s1">shuju</span><span class="s2">,</span><span class="s1">ax</span><span class="s2">,</span><span class="s1">colors = </span><span class="s2">None, </span><span class="s1">show_value = </span><span class="s2">False</span><span class="s1">):</span>
+    <span class="s2">def </span><span class="s1">make_autopct(values):</span>
+        <span class="s2">def </span><span class="s1">my_autopct(pct):</span>
+            <span class="s1">total = sum(values)</span>
+            <span class="s1">val = int(round(pct*total/</span><span class="s4">100.0</span><span class="s1">))</span>
+            <span class="s0"># 同时显示数值和占比的饼图</span>
+            <span class="s2">return </span><span class="s3">'{p:.1f}%</span><span class="s2">\n</span><span class="s3">{v:d}'</span><span class="s1">.format(p=pct</span><span class="s2">,</span><span class="s1">v=val)</span>
+        <span class="s2">return </span><span class="s1">my_autopct</span>
+    <span class="s1">ax.pie(x = shuju</span><span class="s2">,         </span><span class="s0"># 绘图数据</span>
+            <span class="s1">explode = </span><span class="s2">None,       </span><span class="s0"># 突出显示特定人群</span>
+            <span class="s1">labels=label</span><span class="s2">,         </span><span class="s0"># 添加教育水平标签</span>
+            <span class="s1">colors=colors</span><span class="s2">,         </span><span class="s0"># 设置饼图的自定义填充色</span>
+            <span class="s1">autopct=make_autopct(shuju) </span><span class="s2">if </span><span class="s1">show_value </span><span class="s2">else </span><span class="s3">'%.1f%%'</span><span class="s2">,      </span><span class="s0"># 设置百分比的格式，这里保留一位小数</span>
+            <span class="s1">pctdistance=</span><span class="s4">0.7</span><span class="s2">,       </span><span class="s0"># 设置百分比标签与圆心的距离</span>
+            <span class="s1">labeldistance = </span><span class="s4">1.15</span><span class="s2">,  </span><span class="s0"># 设置教育水平标签与圆心的距离</span>
+            <span class="s1">startangle = </span><span class="s4">180</span><span class="s2">,      </span><span class="s0"># 设置饼图的初始角度</span>
+            <span class="s1">radius = </span><span class="s4">1</span><span class="s2">,          </span><span class="s0"># 设置饼图的半径</span>
+            <span class="s1">counterclock = </span><span class="s2">False, </span><span class="s0"># 是否逆时针，这里设置为顺时针方向</span>
+            <span class="s0"># 设置饼图内外边界的属性值：linewidth表示饼图内外边框线宽度；width表示饼图内外宽度，可控制生成环形图；edgecolor表示边框线的颜色</span>
+            <span class="s1">textprops = {</span><span class="s3">'fontsize'</span><span class="s1">:</span><span class="s4">12</span><span class="s2">, </span><span class="s3">'color'</span><span class="s1">:</span><span class="s3">'k'</span><span class="s1">}</span><span class="s2">,   </span><span class="s0"># 设置文本标签的属性值</span>
+            <span class="s1">center = (</span><span class="s4">0</span><span class="s2">,</span><span class="s4">0</span><span class="s1">)</span><span class="s2">,        </span><span class="s0"># 设置饼图的原点</span>
+            <span class="s1">frame = </span><span class="s4">0</span><span class="s1">)</span>
+
+<span class="s2">def </span><span class="s1">qita(series_counts</span><span class="s2">, </span><span class="s1">qita_percentage_max = </span><span class="s4">0.05</span><span class="s1">):</span>
+    <span class="s1">qita_sum = </span><span class="s4">0</span>
+    <span class="s2">for </span><span class="s1">index</span><span class="s2">, </span><span class="s1">value </span><span class="s2">in </span><span class="s1">zip(series_counts.index</span><span class="s2">, </span><span class="s1">series_counts):</span>
+        <span class="s2">if </span><span class="s1">value/sum(series_counts) &lt; qita_percentage_max:</span>
+            <span class="s1">qita_sum += value</span>
+            <span class="s1">series_counts.drop(index</span><span class="s2">,</span><span class="s1">inplace = </span><span class="s2">True</span><span class="s1">)</span>
+    <span class="s2">if </span><span class="s1">qita_sum != </span><span class="s4">0</span><span class="s1">:</span>
+        <span class="s1">series_counts = pd.concat((series_counts</span><span class="s2">,</span><span class="s1">pd.Series({</span><span class="s3">'其他'</span><span class="s1">:qita_sum})))</span>
+    <span class="s2">return </span><span class="s1">series_counts</span>
+<span class="s0">#%% 
+</span><span class="s2">with </span><span class="s1">sns.color_palette(</span><span class="s3">'rainbow'</span><span class="s1">):</span>
+    <span class="s1">count_pieplot(data_3_zhuanye</span><span class="s2">,</span><span class="s4">3</span><span class="s2">,</span><span class="s4">2</span><span class="s2">,</span><span class="s1">vars = [</span><span class="s3">'消费地点'</span><span class="s2">,</span><span class="s3">'专业名称'</span><span class="s2">,</span><span class="s3">'性别'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">hue = </span><span class="s3">'专业名称'</span><span class="s2">,</span><span class="s1">qita_percentage_max=  </span><span class="s4">0.02</span><span class="s2">,</span><span class="s1">figsize=(</span><span class="s4">6</span><span class="s2">,</span><span class="s4">11</span><span class="s1">))</span>
+    <span class="s0">#vars = ['消费地点','专业名称','性别'] 表示要对哪些变量进行分组统计</span>
+    <span class="s0">#hue = '专业名称' 表示将数据按照专业名称进行颜色编码，以更好地区分不同专业；</span>
+    <span class="s0">#qita_percentage_max=  0.02 表示当某一类别所占比例低于该值时，将其合并为其他类别，并在图表中以“其他”方式呈现，</span>
+<span class="s0">#%% 
+#男女消费地点饼图：</span>
+<span class="s2">with </span><span class="s1">sns.color_palette(</span><span class="s3">'rainbow'</span><span class="s1">):</span>
+    <span class="s1">count_pieplot(data_3_zhuanye</span><span class="s2">,</span><span class="s4">1</span><span class="s2">,</span><span class="s4">2</span><span class="s2">,</span><span class="s1">vars = [</span><span class="s3">'消费地点'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">hue = </span><span class="s3">'性别'</span><span class="s2">,</span><span class="s1">qita_percentage_max=  </span><span class="s4">0.02</span><span class="s2">,</span><span class="s1">figsize=(</span><span class="s4">10</span><span class="s2">,</span><span class="s4">4</span><span class="s1">))</span>
+<span class="s0">#%% 
+# 不同专业男生消费地点饼图：</span>
+<span class="s2">with </span><span class="s1">sns.color_palette(</span><span class="s3">'rainbow'</span><span class="s1">):</span>
+    <span class="s1">count_pieplot(data_3_zhuanye.query(</span><span class="s3">&quot;性别 == '男'&quot;</span><span class="s1">)</span><span class="s2">, </span><span class="s4">1</span><span class="s2">, </span><span class="s4">3</span><span class="s2">, </span><span class="s1">vars=[</span><span class="s3">'消费地点'</span><span class="s2">, </span><span class="s3">'专业名称'</span><span class="s1">]</span><span class="s2">, </span><span class="s1">hue=</span><span class="s3">'专业名称'</span><span class="s2">, </span><span class="s1">qita_percentage_max=</span><span class="s4">0.02</span><span class="s2">,</span>
+                  <span class="s1">figsize=(</span><span class="s4">16</span><span class="s2">, </span><span class="s4">4</span><span class="s1">))</span>
+<span class="s0">#%% 
+# 不同专业女生消费地点饼图：</span>
+<span class="s2">with </span><span class="s1">sns.color_palette(</span><span class="s3">'rainbow'</span><span class="s1">):</span>
+    <span class="s1">count_pieplot(data_3_zhuanye.query(</span><span class="s3">&quot;性别 == '女'&quot;</span><span class="s1">)</span><span class="s2">,</span><span class="s4">1</span><span class="s2">,</span><span class="s4">3</span><span class="s2">,</span><span class="s1">vars = [</span><span class="s3">'消费地点'</span><span class="s2">,</span><span class="s3">'专业名称'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">hue = </span><span class="s3">'专业名称'</span><span class="s2">,</span><span class="s1">qita_percentage_max=  </span><span class="s4">0.02</span><span class="s2">,</span><span class="s1">figsize=(</span><span class="s4">16</span><span class="s2">,</span><span class="s4">4</span><span class="s1">))</span>
+<span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">sklearn</span>
+<span class="s2">from </span><span class="s1">sklearn </span><span class="s2">import  </span><span class="s1">cluster</span>
+<span class="s2">from </span><span class="s1">sklearn.preprocessing </span><span class="s2">import </span><span class="s1">StandardScaler</span>
+
+<span class="s0"># 取出日常消费类型数据</span>
+<span class="s1">data_2_1_1 = data_2_1.query(</span><span class="s3">&quot;消费地点 in ['第四食堂','第一食堂','第二食堂', '红太阳超市','第五食堂','第三食堂', '好利来食品店']&quot;</span><span class="s1">)</span>
+<span class="s0"># 取出每次刷卡平均消费金额、总消费次数、消费总金额三个特征进行聚类</span>
+<span class="s1">data = data_2_1_1.groupby([</span><span class="s3">'校园卡号'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">as_index=</span><span class="s2">False</span><span class="s1">)[</span><span class="s3">'消费金额'</span><span class="s1">].mean()</span>
+<span class="s1">data[</span><span class="s3">'本月内消费累计次数'</span><span class="s1">] = data_2_1_1.groupby(</span><span class="s3">'校园卡号'</span><span class="s1">)[</span><span class="s3">'消费次数'</span><span class="s1">].size().values</span>
+<span class="s1">data[</span><span class="s3">'消费总金额'</span><span class="s1">] = data_2_1_1.groupby(</span><span class="s3">'校园卡号'</span><span class="s1">)[</span><span class="s3">'消费金额'</span><span class="s1">].sum().values</span>
+<span class="s1">data = data.set_index(</span><span class="s3">'校园卡号'</span><span class="s1">)</span>
+<span class="s1">data.columns = [</span><span class="s3">'平均每次刷卡消费金额'</span><span class="s2">,</span><span class="s3">'本月内累计消费次数'</span><span class="s2">,</span><span class="s3">'消费总金额'</span><span class="s1">]</span>
+<span class="s1">data</span>
+<span class="s0">#%% 
+# Kmeans聚类：</span>
+<span class="s0"># Kmeans聚类模型，七个聚类簇</span>
+<span class="s1">model = cluster.KMeans(n_clusters=</span><span class="s4">7</span><span class="s1">)</span>
+<span class="s0"># 创建标准化模型</span>
+<span class="s1">scaler = StandardScaler()</span>
+<span class="s0"># 对数据集中的所有特征进行标准化</span>
+<span class="s1">data_ = scaler.fit_transform(data.iloc[:</span><span class="s2">,</span><span class="s1">:])</span>
+<span class="s0"># 模型训练</span>
+<span class="s1">model.fit(data_)</span>
+<span class="s0"># 对数据进行聚类得到标签</span>
+<span class="s1">labels = model.predict(data_)</span>
+<span class="s0"># 将标签加入到data数据中</span>
+<span class="s1">data[</span><span class="s3">'labels'</span><span class="s1">] = labels</span>
+<span class="s1">data</span>
+<span class="s0">#%% 
+# 二维散点图</span>
+<span class="s1">sns.set(font=</span><span class="s3">'SimHei'</span><span class="s1">)</span>
+<span class="s1">sns.scatterplot(data =data </span><span class="s2">, </span><span class="s1">x = </span><span class="s3">'本月内累计消费次数'</span><span class="s2">,</span><span class="s1">y= </span><span class="s3">'平均每次刷卡消费金额'</span><span class="s2">,</span><span class="s1">hue = </span><span class="s3">'labels'</span><span class="s2">,</span><span class="s1">palette = </span><span class="s3">'rainbow'</span><span class="s1">)</span>
+<span class="s1">plt.title(</span><span class="s3">'七个消费群体散点图'</span><span class="s1">)</span>
+<span class="s1">plt.show()</span>
+<span class="s0">#%% 
+# 三维散点图：</span>
+<span class="s1">colors = [</span><span class="s3">'#a88f59'</span><span class="s2">, </span><span class="s3">'#da467d'</span><span class="s2">, </span><span class="s3">'#fdb915'</span><span class="s2">, </span><span class="s3">'#69d84f'</span><span class="s2">, </span><span class="s3">'#380282'</span><span class="s2">,</span><span class="s3">'r'</span><span class="s2">,</span><span class="s3">'b'</span><span class="s1">]</span>
+<span class="s2">from </span><span class="s1">mpl_toolkits.mplot3d </span><span class="s2">import </span><span class="s1">Axes3D</span>
+
+<span class="s1">fig = plt.figure(figsize=(</span><span class="s4">15</span><span class="s2">,</span><span class="s4">10</span><span class="s1">))</span>
+<span class="s1">ax = fig.add_subplot(</span><span class="s4">121</span><span class="s2">, </span><span class="s1">projection=</span><span class="s3">'3d'</span><span class="s1">)</span>
+
+<span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">data[</span><span class="s3">'labels'</span><span class="s1">].unique():</span>
+    <span class="s1">d = data[data[</span><span class="s3">'labels'</span><span class="s1">]==i]</span>
+    <span class="s1">ax.scatter(d[</span><span class="s3">'本月内累计消费次数'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">d[</span><span class="s3">'平均每次刷卡消费金额'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">d[</span><span class="s3">'消费总金额'</span><span class="s1">]</span><span class="s2">,</span><span class="s1">c=colors[i]</span><span class="s2">,</span><span class="s1">label =i)</span>
+    <span class="s1">ax.set_xlabel(</span><span class="s3">'本月内累计消费次数'</span><span class="s1">)</span>
+    <span class="s1">ax.set_ylabel(</span><span class="s3">'平均每次刷卡消费金额'</span><span class="s1">)</span>
+    <span class="s1">ax.set_zlabel(</span><span class="s3">'消费总金额'</span><span class="s1">)</span>
+<span class="s1">plt.title(</span><span class="s3">'七个消费群体散点图'</span><span class="s2">,</span><span class="s1">fontsize = </span><span class="s4">15</span><span class="s1">)</span>
+<span class="s1">plt.legend()</span>
+<span class="s1">plt.show()</span>
+<span class="s0">#%% 
+</span></pre>
+</body>
+</html>
